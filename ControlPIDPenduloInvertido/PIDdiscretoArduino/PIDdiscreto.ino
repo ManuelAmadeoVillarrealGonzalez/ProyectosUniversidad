@@ -3,8 +3,6 @@
 #include "I2Cdev.h"
 #include "MPU6050.h"
 #include "Wire.h"
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
 // La dirección del MPU6050 puede ser 0x68 o 0x69, dependiendo 
 // del estado de AD0. Si no se especifica, 0x68 estará implicito
 MPU6050 sensor;
@@ -104,11 +102,11 @@ void loop ()
 {
   LecturaSensores();
   //Suponemos el valor inicial del angulo en 96 para simular que el pendulo se encuentra derecho y la distancia a la que queremos el carrito
-  int setpointAngulo=5;
-  //float setPointcarrito=20;
+  //int setpointAngulo=5;
+  float setPointcarrito=40;
   //Calculamos los valores de los errores para cada uno de los PID
-  float Ekp=setpointAngulo-angulo;//float Ekp=Mkc-angulo; //Ya que funcione el pendulo cambiamos la ecuacion para la implementacion de ambos PID
-  //float Ekc=setPointcarrito-distance;
+  float Ekp=(Mkc+5)-angulo;//float Ekp=setpointAngulo-angulo;float Ekp=Mkc-angulo; //Ya que funcione el pendulo cambiamos la ecuacion para la implementacion de ambos PID
+  float Ekc=setPointcarrito-distance;
 
 //  Serial.println("Valor Error Pendulo");
 //  Serial.println(Ekp);
@@ -120,30 +118,30 @@ void loop ()
   //PID pendulo
   Mkp=((-a1p*Mk1p)-(a2p*Mk2p)+(b0p*Ekp)+(b1p*Ek1p)+(b2p*Ek2p))/a0p;
   //PID carrito
-  //Mkc=((-a1c*Mk1c)-(a2c*Mk2c)+(b0c*Ekc)+(b1c*Ek1c)+(b2c*Ek2c))/a0c;
+  Mkc=((-a1c*Mk1c)-(a2c*Mk2c)+(b0c*Ekc)+(b1c*Ek1c)+(b2c*Ek2c))/a0c;
   
   
   //si x es 1 calculamos pwm carrito, si x es 2 calculamos pwm pendulo
-  //CalcularPWM(1,Mkc);
+  CalcularPWM(1,Mkc);
   CalcularPWM(2,Mkp);
   //Llamamos a la funcion Mover Carrito para mover el carro a la posicion deseada
-  //MoverCarrito(Ekc,pwmCarrito);
-  MoverPendulo(Ekp,pwmCarrito);
+  MoverCarrito(Ekc,pwmCarrito);
+  //MoverPendulo(Ekp,pwmCarrito);
   //Llamamos a la funcion MoverPendulo para mover el pendulo a la posicion deseada
-  //if(-1>Ekc<1){
-     //MoverPendulo(angulo,pwmCarrito);
-    //}
+  if(-2>Ekc<2){
+     MoverPendulo(angulo,pwmCarrito);
+  }
 
 
   //Retroalimentacion de valores de Mk y Ek Pendulo
   Ek2p=Ek1p;Ek1p=Ekp;Mk2p=Mk1p;Mk1p=Mkp;
   //Retroalimentacion de valores de Mk y Ek Carrito
-  //Ek2c=Ek1c;Ek1c=Ekc;Mk2c=Mk1c;Mk1c=Mkc;
+  Ek2c=Ek1c;Ek1c=Ekc;Mk2c=Mk1c;Mk1c=Mkc;
 
 }
 void Adelante (int pwm)
 {
-  Serial.println("Entro Adelante?");
+
   //Direccion de motor 1
   digitalWrite (IN1, HIGH);
   digitalWrite (IN2, LOW);
@@ -157,7 +155,6 @@ void Adelante (int pwm)
 
 void Atras (int pwm)
 {
-  Serial.println("Entro Atras?");
   //Direccion de motor 1
   digitalWrite (IN1, LOW);
   digitalWrite (IN2, HIGH);
@@ -205,13 +202,9 @@ void CalcularPWM(int x,float PID){
       pwmCarrito=map(PID,-10,50,120,255);
     }
    else if(x==2){
-//      Serial.println("Valor PID pendulo");
-//      Serial.println(PID);
-//      delay(500);
+
       pwmPendulo=map(PID,-1000,1000,140,180);
-//      Serial.println("Valor pwm");
-//      Serial.println(pwmPendulo);
-//      delay(500);
+
     }
 }
 
@@ -228,7 +221,7 @@ void MoverCarrito(float error,int pwm){
         delay(30);
         Parar();
       }
-    else if(error==0){
+    else if(-2>error<2){
         Parar();
         delay(50);
       }
@@ -245,21 +238,22 @@ void MoverPendulo(float error,int pwm){
 //      Serial.println("Valor error");
 //      Serial.println(error);
 //      delay(500);    
+    delay(30);
 
-    if(-4<=error>=4){
+    if(2<=error>=12){
         Parar();
-        delay(100);
+        delay(30);
       }
-    else if(error<-4){
-       Atras(125);
-       delay(30);
+    else if(error<2){
+       Adelante(pwm);
+       delay(50);
        Parar();
        //delay(10);
       }
-    else if(error>4){
+    else if(error>12){
 
-       Adelante(125);
-       delay(30);
+       Atras(pwm);
+       delay(50);
        Parar();
        //delay(10);
       }
