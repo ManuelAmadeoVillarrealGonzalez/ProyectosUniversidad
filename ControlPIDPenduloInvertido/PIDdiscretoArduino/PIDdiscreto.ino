@@ -101,19 +101,11 @@ void setup ()
 void loop ()
 {
   LecturaSensores();
-  //Suponemos el valor inicial del angulo en 96 para simular que el pendulo se encuentra derecho y la distancia a la que queremos el carrito
-  //int setpointAngulo=5;
+  //Se estabiliza el carrito a una posicion deseada en CM
   float setPointcarrito=40;
   //Calculamos los valores de los errores para cada uno de los PID
-  float Ekp=(Mkc+5)-angulo;//float Ekp=setpointAngulo-angulo;float Ekp=Mkc-angulo; //Ya que funcione el pendulo cambiamos la ecuacion para la implementacion de ambos PID
+  float Ekp=(Mkc+5)-angulo;
   float Ekc=setPointcarrito-distance;
-
-//  Serial.println("Valor Error Pendulo");
-//  Serial.println(Ekp);
-//  Serial.println("Valor Error Carrito");
-//  Serial.println(Ekc);
-//  delay(500);
-  
 
   //PID pendulo
   Mkp=((-a1p*Mk1p)-(a2p*Mk2p)+(b0p*Ekp)+(b1p*Ek1p)+(b2p*Ek2p))/a0p;
@@ -126,7 +118,6 @@ void loop ()
   CalcularPWM(2,Mkp);
   //Llamamos a la funcion Mover Carrito para mover el carro a la posicion deseada
   MoverCarrito(Ekc,pwmCarrito);
-  //MoverPendulo(Ekp,pwmCarrito);
   //Llamamos a la funcion MoverPendulo para mover el pendulo a la posicion deseada
   if(-2>Ekc<2){
      MoverPendulo(angulo,pwmCarrito);
@@ -199,10 +190,11 @@ void LecturaSensores(){
 void CalcularPWM(int x,float PID){
     
     if(x==1){
+     //Realizamos un map con los valores del PID del carrito para poder obtener el PWM nesecario para nuestros motores
       pwmCarrito=map(PID,-10,50,120,255);
     }
    else if(x==2){
-
+    //Realizamos un map con los valores del PID del pendulo para poder obtener el PWM nesecario para nuestros motores
       pwmPendulo=map(PID,-1000,1000,140,180);
 
     }
@@ -210,6 +202,7 @@ void CalcularPWM(int x,float PID){
 
 void MoverCarrito(float error,int pwm){
 
+    //Como su nombre lo indica esta funcion sirve para mover el carrito a la posicion deseada seteada mediante la variable setPointCarrito
     
     if(error<0){
         Atras(pwm);
@@ -228,16 +221,7 @@ void MoverCarrito(float error,int pwm){
     
   }
 void MoverPendulo(float error,int pwm){
-  
-//    if(pwm>160){
-//      pwm=160;
-//      }
-//     else if(pwm<130){
-//      pwm=130;
-//      }
-//      Serial.println("Valor error");
-//      Serial.println(error);
-//      delay(500);    
+    //Como su nombre lo indica esta funcion sirve para mover el carrito a la posicion deseada del pendulo para de esta forma el pendulo invertido se logre estabilizar de manera correcta
     delay(30);
 
     if(2<=error>=12){
@@ -248,14 +232,12 @@ void MoverPendulo(float error,int pwm){
        Adelante(pwm);
        delay(50);
        Parar();
-       //delay(10);
       }
     else if(error>12){
 
        Atras(pwm);
        delay(50);
        Parar();
-       //delay(10);
       }
       
   }
